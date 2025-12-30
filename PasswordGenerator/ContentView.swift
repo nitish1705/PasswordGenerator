@@ -9,95 +9,7 @@ struct ContentView: View {
     @State private var buttonTapped = false
 
     let buttons = ["Generate Password", "View Stored Passwords", "Settings", "About"]
-
-    var body: some View {
-        ZStack {
-            
-            Color.blue.opacity(0.8)
-                .ignoresSafeArea()
-
-            Rectangle()
-                .fill(Color.white)
-                .frame(width: 360, height: 770)
-                .cornerRadius(20)
-                .scaleEffect(buttonTapped ? 1 : 0)
-            VStack(spacing: 40) {
-
-                HStack(spacing: 6) {
-                    Text("Generator")
-                        .foregroundStyle(Color(.label))
-                        .font(.system(size: 34, weight: .bold))
-                        .offset(y: openAppTitle ? -60 : 80)
-                        .opacity(slideTitle ? 1 : 0)
-                        .offset(x: slideTitle ? 170 : -120)
-
-                    Text("Password")
-                        .foregroundStyle(Color(.label))
-                        .font(.system(size: 34, weight: .bold))
-                        .offset(y: openAppTitle ? -60 : 80)
-                        .opacity(slideTitle ? 1 : 0)
-                        .offset(x: slideTitle ? -170 : 120)
-                }
-                .opacity(buttonTapped ? 0 : 1)
-
-                Spacer().frame(height: 40)
-
-                VStack(spacing: 20) {
-                    ForEach(buttons.indices, id: \.self) { index in
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.8)) {
-                                buttonTapped = true
-                            }
-
-                            switch index {
-                            case 0: goToPage = "GeneratePassword"
-                            case 1: goToPage = "StoredPasswords"
-                            case 2: goToPage = "Settings"
-                            case 3: goToPage = "About"
-                            default: break
-                            }
-                        } label: {
-                            Text(buttons[index])
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background( RoundedRectangle(cornerRadius: 14) .fill(Color.white.opacity(0.15)) )
-                                .overlay( RoundedRectangle(cornerRadius: 14) .stroke(Color.white.opacity(0.2)) )
-                                .foregroundColor(.white)
-                                .shadow(color: .black.opacity(0.25), radius: 8, y: 6)
-                                .offset(y: showButtons[index] ? 0 : 40) .opacity(showButtons[index] ? 1 : 0)
-                                .opacity(buttonTapped ? 0 : 1)
-                        }
-                    }
-                }
-                .padding(.horizontal, 30)
-            }
-            if buttonTapped {
-                ZStack {
-                    if goToPage == "GeneratePassword" {
-                        passwordGeneratePage(
-                            goToPage: $goToPage,
-                            buttonTapped: $buttonTapped
-                        )
-                    }
-                    if goToPage == "StoredPasswords" {
-                        storePasswordPage()
-                    }
-                    if goToPage == "Settings" {
-                        settingsPage()
-                    }
-                    if goToPage == "About" {
-                        aboutPage()
-                    }
-                }
-                .transition(.opacity)
-            }
-        }
-        .onAppear {
-            animateIntro()
-        }
-    }
-
+    
     func animateIntro() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             withAnimation(.spring(response: 0.7, dampingFraction: 0.8)) {
@@ -117,6 +29,72 @@ struct ContentView: View {
                     showButtons[i] = true
                 }
             }
+        }
+    }
+
+    var body: some View {
+        NavigationStack{
+            ZStack {
+                Color.orange.opacity(1) .ignoresSafeArea()
+                VStack(spacing: 40) {
+
+                    HStack(spacing: 6) {
+                        Text("Generator")
+                            .foregroundStyle(Color(.label))
+                            .font(.system(size: 34, weight: .bold))
+                            .offset(y: openAppTitle ? -60 : 80)
+                            .opacity(slideTitle ? 1 : 0)
+                            .offset(x: slideTitle ? 170 : -120)
+
+                        Text("Password")
+                            .foregroundStyle(Color(.label))
+                            .font(.system(size: 34, weight: .bold))
+                            .offset(y: openAppTitle ? -60 : 80)
+                            .opacity(slideTitle ? 1 : 0)
+                            .offset(x: slideTitle ? -170 : 120)
+                    }
+                    Spacer().frame(height: 40)
+
+                    VStack(spacing: 20) {
+                        ForEach(buttons.indices, id: \.self) { index in
+                            Button {
+                                nextPage = true
+
+                                switch index {
+                                case 0: goToPage = "GeneratePassword"
+                                case 1: goToPage = "StoredPasswords"
+                                case 2: goToPage = "Settings"
+                                case 3: goToPage = "About"
+                                default: break
+                                }
+                            } label: {
+                                Text(buttons[index])
+                                    .font(.headline)
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background( RoundedRectangle(cornerRadius: 14) .fill(Color.white.opacity(0.35)) )
+                                    .overlay( RoundedRectangle(cornerRadius: 14) .stroke(Color.white.opacity(0.6)) )
+                                    .foregroundColor(.white)
+                                    .shadow(color: .black.opacity(0.25), radius: 8, y: 6)
+                                    .offset(y: showButtons[index] ? 0 : 40) .opacity(showButtons[index] ? 1 : 0)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 30)
+                }
+            }
+            .navigationDestination(isPresented: $nextPage){
+                switch goToPage {
+                case "GeneratePassword": passwordGeneratePage()
+                case "StoredPasswords": storePasswordPage()
+                case "Settings": settingsPage()
+                case "About": aboutPage()
+                default: EmptyView()
+                }
+            }
+        }
+        .onAppear {
+            animateIntro()
         }
     }
 }
