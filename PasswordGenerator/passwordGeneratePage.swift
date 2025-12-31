@@ -16,6 +16,7 @@ struct PasswordResponse: Codable {
 
 struct passwordGeneratePage: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     
     @State private var passLength = 16
     @State private var useUpperCase = true
@@ -24,6 +25,10 @@ struct passwordGeneratePage: View {
     @State private var useSymbols = true
     
     @State private var generatedPassword = ""
+    
+    @State private var storeClick = false
+    
+    @Query private var passwords: [passwordModel]
     
     func pass(
         length: Int,
@@ -76,18 +81,29 @@ struct passwordGeneratePage: View {
                     Spacer()
                 }
                 .padding(.vertical, 50)
-                HStack(spacing: 130){
-                    Button{
+                HStack(spacing: 16) {
+                    
+                    Button {
                         generatedPassword = ""
                     } label: {
                         Text("Clear")
-                            .foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0))
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .frame(width: 170, height: 40)
-                            )
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .foregroundColor(.white)
+                            .background(Color.blue)
+                            .cornerRadius(12)
                     }
-                    Button{
+
+                    Button {
+                        storeClick = true
+                    } label: {
+                        Text("Store")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .foregroundColor(.white)
+                            .background(Color.blue)
+                            .cornerRadius(12)
+                    }
+
+                    Button {
                         Task {
                             do {
                                 generatedPassword = try await pass(
@@ -98,19 +114,19 @@ struct passwordGeneratePage: View {
                                     useSymbols: useSymbols
                                 )
                             } catch {
-                                print("Failed to generate password:", error)
+                                print("Error generating password")
                             }
                         }
                     } label: {
                         Text("Generate")
-                            .foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0))
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .frame(width: 170, height: 40)
-                            )
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .foregroundColor(.white)
+                            .background(Color.blue)
+                            .cornerRadius(12)
                     }
-                    
                 }
+                .padding(.horizontal)
+
                 .padding(.bottom, 50)
                 ZStack {
                     RoundedRectangle(cornerRadius: 20)
@@ -219,8 +235,52 @@ struct passwordDisplayFrame: View {
     }
 }
 
-
+struct storingPassword: View{
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelcontext
+    @State var passsword: String
+    @State var username: String
+    
+    var body: some View{
+        NavigationStack{
+            VStack(spacing: 40){
+                FancyTextField(placeHolder: "Enter username", text: $username)
+                FancyTextField(placeHolder: "Enter Password", text: $passsword)
+                Button{
+                    let newPassword = passwordModel(name: username, password: passsword)
+                    modelcontext.insert(newPassword)
+                    dismiss()
+                } label: {
+                    HStack{
+                        Image(systemName: "plus")
+                        Text("Store")
+                    }
+                    .foregroundStyle(Color(.white))
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .foregroundStyle(Color.blue)
+                            .frame(width: 100, height: 50)
+                    )
+                }
+                Spacer()
+            }
+            .toolbar{
+                ToolbarItem(placement: .topBarLeading){
+                    Button{
+                        dismiss()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                    }
+                }
+                ToolbarItem(placement: .principal){
+                    Text("Store Passwords!!")
+                        .font(.title3)
+                }
+            }
+        }
+    }
+}
 #Preview {
-    passwordGeneratePage()
+//    storingPassword(passsword: "", username: "")
 }
 
