@@ -9,8 +9,21 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+struct PasswordResponse: Codable {
+    let password: String
+}
+
+
 struct passwordGeneratePage: View {
     @Environment(\.dismiss) private var dismiss
+    
+    @State private var passLength = 16
+    @State private var useUpperCase = true
+    @State private var useLowerCase = true
+    @State private var useNumbers = true
+    @State private var useSymbols = true
+    
+    @State private var generatedPassword = ""
     
     func pass(
         length: Int,
@@ -32,23 +45,25 @@ struct passwordGeneratePage: View {
         
         let (data, _) = try await URLSession.shared.data(from: url)
         
-        return String(data: data, encoding: .utf8) ?? ""
+        let decoded = try JSONDecoder().decode(PasswordResponse.self, from: data)
+        return decoded.password
     }
-    @State private var generatedPassword = ""
+    
     
     var body: some View {
         ZStack{
-            Color.orange.opacity(1).ignoresSafeArea()
-            VStack(spacing: 20){
+            Color.orange.ignoresSafeArea()
+            VStack(){
                 Text("Generate Password")
+                    .foregroundStyle(Color(.label))
                     .font(.largeTitle)
                     .bold()
-                    .offset(y: 45)
+                    .padding(.top, 30)
                 
                 HStack(){
                     passwordDisplayFrame(password: generatedPassword)
                     Button{
-                        
+                        UIPasteboard.general.string = generatedPassword
                     } label: {
                         VStack{
                             Image(systemName: "document")
@@ -60,22 +75,120 @@ struct passwordGeneratePage: View {
                     }
                     Spacer()
                 }
-                .offset(y: 30)
-                HStack{
+                .padding(.vertical, 50)
+                HStack(spacing: 130){
                     Button{
-                        
+                        generatedPassword = ""
+                    } label: {
+                        Text("Clear")
+                            .foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0))
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .frame(width: 170, height: 40)
+                            )
+                    }
+                    Button{
+                        Task {
+                            do {
+                                generatedPassword = try await pass(
+                                    length: passLength,
+                                    useUpperCase: useUpperCase,
+                                    UseLowerCase: useLowerCase,
+                                    useNumbers: useNumbers,
+                                    useSymbols: useSymbols
+                                )
+                            } catch {
+                                print("Failed to generate password:", error)
+                            }
+                        }
                     } label: {
                         Text("Generate")
                             .foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0))
                             .background(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .frame(width: 100, height: 40)
+                                    .frame(width: 170, height: 40)
                             )
                     }
                     
                 }
-                Spacer()
+                .padding(.bottom, 50)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.white.opacity(0.5))
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            Text("Password Settings")
+                                .font(.title2)
+
+                            Grid(alignment: .leading, horizontalSpacing: 40, verticalSpacing: 50) {
+                                GridRow {
+                                    Text("Length")
+                                        .font(.title2)
+
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .fill(Color.gray.opacity(0.2))
+
+                                        TextField("", value: $passLength, format: .number)
+                                            .keyboardType(.numberPad)
+                                            .multilineTextAlignment(.center)
+                                            .padding(.horizontal, 8)
+                                    }
+                                    .frame(width: 80, height: 36)
+                                }
+                                GridRow {
+                                    Text("Include Uppercase")
+                                    .font(.title2)
+
+                                    Toggle("", isOn: $useUpperCase)
+                                        .labelsHidden()
+                                }
+                                GridRow{
+                                    Text("Include Lowecase")
+                                        .font(.title2)
+                                    
+                                    Toggle("", isOn: $useLowerCase)
+                                        .labelsHidden()
+                                }
+                                GridRow{
+                                    Text("Include Numbers")
+                                        .font(.title2)
+                                    
+                                    Toggle("", isOn: $useNumbers)
+                                        .labelsHidden()
+                                }
+                                GridRow{
+                                    Text("Include Symbols")
+                                        .font(.title2)
+                                    
+                                    Toggle("", isOn: $useSymbols)
+                                        .labelsHidden()
+                                }
+                            }
+                            .padding()
+                        }
+                        .padding(.top, 10)
+                    }
+                }
+                .frame(maxWidth: 370)
+                .frame(height: 300)
                 
+                Button{
+                    dismiss()
+                } label: {
+                    HStack{
+                        Image(systemName: "chevron.left")
+                        Text("Go back Home")
+                    }
+                    .foregroundStyle(Color(.systemBackground))
+                    .frame(width: 200, height: 50)
+                    .background(
+                        RoundedRectangle(cornerRadius: 25)
+                            .fill(Color.blue.opacity(1))
+                    )
+                }
+                .padding(.vertical, 50)
+                Spacer()
                 
             }
         }
@@ -84,29 +197,28 @@ struct passwordGeneratePage: View {
     }
 }
 
-struct passwordDisplayFrame: View{
+struct passwordDisplayFrame: View {
     let password: String
-    
-    var body: some View{
-        ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.gray.opacity(0.4), lineWidth: 1)
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.white.opacity(0.6))
-                )
 
-            TextEditor(text: .constant(password))
-                .padding(12)
-                .scrollContentBackground(.hidden)
-                .disabled(true)
-                .foregroundColor(.black)
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white.opacity(0.6))
+
+            ScrollView(.horizontal, showsIndicators: true) {
+                Text(password)
+                    .font(.system(size: 16, weight: .medium, design: .monospaced))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .foregroundColor(.black)
+            }
+            .scrollIndicators(.hidden)
         }
-        .frame(width: 300, height: 55)
-        .frame(maxHeight: 200)
+        .frame(height: 50)
         .padding(.horizontal)
     }
 }
+
 
 #Preview {
     passwordGeneratePage()
