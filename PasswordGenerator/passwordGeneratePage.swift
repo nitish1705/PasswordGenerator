@@ -209,6 +209,9 @@ struct passwordGeneratePage: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .sheet(isPresented: $storeClick){
+            storingPassword(passsword: generatedPassword, username: "")
+        }
         
     }
 }

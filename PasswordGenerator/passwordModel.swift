@@ -10,7 +10,8 @@ import SwiftUI
 import SwiftData
 
 @Model
-class passwordModel{
+class passwordModel: Identifiable{
+    var id: UUID = UUID()
     var name: String
     var password: String
     
